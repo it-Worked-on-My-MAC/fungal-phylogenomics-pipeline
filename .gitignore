@@ -1,0 +1,9 @@
+.DS_Store
+.Rhistory
+samples.txt
+reads/
+results_*/
+*.fq.gz
+*.fastq.gz
+*.fasta
+*.fa
