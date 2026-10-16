@@ -1,0 +1,5 @@
+# One sample ID per line (dummy IDs - replace with your own)
+sampleA
+sampleB
+sampleC
+sampleD
