@@ -1,102 +1,104 @@
-# Fungal Phylogenomics Pipeline
+<p align="center">
+  <img src="docs/banner.svg" alt="Fungal Phylogenomics Pipeline" width="100%">
+</p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white" alt="Bash">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Conda-44A833?style=for-the-badge&logo=anaconda&logoColor=white" alt="Conda">
+  <img src="https://img.shields.io/badge/SLURM-HPC-0f766e?style=for-the-badge" alt="SLURM HPC">
+  <img src="https://img.shields.io/badge/data-none%20(code%20only)-64748b?style=for-the-badge" alt="Code only">
+</p>
 
-A reusable, config-driven shell/Python pipeline from raw paired-end reads to assembly, annotation, orthology and phylogenomic species trees. **This repository contains code only - no sequencing data, results or sample metadata.**
+<p align="center"><b>A config-driven pipeline that takes paired-end reads all the way to assemblies, annotations, orthogroups and species trees.</b><br>
+Built for comparing fungal isolates, reusable for any set of genomes.</p>
 
-## Pipeline Overview
+---
 
-The pipeline covers the following major steps:
+## Pipeline at a glance
 
-1.  **Read Quality Control & Trimming**: Initial processing of raw sequencing reads.
-2.  **De Novo Assembly**: Construction of genome assemblies from trimmed reads.
-3.  **Assembly Quality Assessment**: Evaluation of assembly quality using multiple metrics.
-4.  **Genome Annotation**: Identification and functional annotation of genes.
-5.  **Comparative Genomics**: Whole-genome comparisons to determine relatedness.
-6.  **Phylogenomics**: Inference of species-level evolutionary relationships using multiple methods.
+<p align="center">
+  <img src="docs/pipeline.svg" alt="Pipeline overview: QC and trim, assemble, compare, annotate, orthology, phylogeny" width="100%">
+</p>
+
+| Stage | What it does | Tools |
+|:--|:--|:--|
+| **1 · QC & Trim** | Read quality reports, adapter and quality trimming | FastQC, Trimmomatic |
+| **2 · Assemble** | De novo assembly and assembly quality metrics | SPAdes, QUAST |
+| **3 · Compare** | Genome-wide distances and average nucleotide identity | Mash, FastANI |
+| **4 · Annotate** | Repeat masking and gene prediction | Funannotate |
+| **5 · Orthology** | Orthogroups and gene-count tables | OrthoFinder |
+| **6 · Phylogeny** | Single-copy ortholog trees, supermatrix and consensus species trees | MAFFT, IQ-TREE |
+
+## Why this pipeline
+
+- **One config, many steps.** Paths, thread counts, conda environments and sample lists all live in `bin/00_config.sh`.
+- **Plain text samples.** List your IDs in `samples.txt`; nothing is hard-coded in the scripts.
+- **Two tree methods.** Concatenated supermatrix tree and gene-tree consensus, side by side.
+- **Publication-style plots.** Dendrograms, heatmaps, UpSet plots and QUAST bar charts, with optional group labels.
+- **HPC friendly.** Plain Bash and Python, so it drops into a SLURM job script.
 
 ## Quick start
 
-1. Install the Conda environments listed under *Required Software* (names are set in `bin/00_config.sh`).
-2. Put paired reads in `reads/` as `<ID>_1.fq.gz` / `<ID>_2.fq.gz`.
-3. `cp examples/samples.example.txt samples.txt` and list your own sample IDs.
-4. (Optional) For group labels in the plots, make a TSV like `examples/groups.example.tsv` and pass it as the last argument to `plot_mash_dendrogram.py`, `plot_mash_heatmap.py` or `plot_fastani_dendrogram.py`.
-5. Run the numbered scripts in `bin/` in order (`bash bin/01_...sh`, `bash bin/02_...sh`, ...).
+```bash
+git clone https://github.com/it-Worked-on-My-MAC/fungal-phylogenomics-pipeline.git
+cd fungal-phylogenomics-pipeline
 
-The example files use dummy IDs only.
+# 1. reads go in ./reads as <ID>_1.fq.gz and <ID>_2.fq.gz
+# 2. list your sample IDs
+cp examples/samples.example.txt samples.txt
 
----
+# 3. run the steps in order
+bash bin/01_trimming_and_fastqc.sh
+bash bin/02_assembly_spades.sh
+# ... through bin/10_run_phylogenomics_pipeline.sh
+```
 
-### Step 1: Pre-processing and Assembly
+Optional group labels for the plots: copy `examples/groups.example.tsv`, edit it, and pass it as the last argument to the plotting scripts.
 
-The initial scripts handle the raw data and build the foundational genome assemblies.
+## Repository layout
 
-| File Name | Description |
-| :--- | :--- |
-| `01_trimming_and_fastqc.sh` | Runs **FastQC** for quality reports and **Trimmomatic** for adapter removal and quality trimming on raw paired-end reads. |
-| `02_assembly_spades.sh` | Performs *de novo* genome assembly using **SPAdes** on the trimmed reads. |
-| `03_quast_evaluation.sh` | Evaluates the quality of each SPAdes assembly using **QUAST**. |
-| `04_summarize_quast_results.sh` | Parses the individual QUAST reports and consolidates key metrics (`# contigs`, `Total length`, `N50`, `GC %`) into a single summary file. |
-| `scripts/plot_quast_metrics.py` | Generates bar plots from the QUAST summary to visualize assembly quality across samples. |
+```text
+├── bin/        numbered pipeline steps (00_config.sh, 01_… to 10_…)
+├── scripts/    Python helpers: ortholog extraction, supermatrix, plots
+├── examples/   dummy sample list and group file (no real data)
+└── docs/       README images
+```
 
----
+<details>
+<summary><b>Script reference</b></summary>
 
-### Step 2: Comparative Genomics
+| Script | Purpose |
+|:--|:--|
+| `bin/01_trimming_and_fastqc.sh` | FastQC and Trimmomatic on raw paired reads |
+| `bin/02_assembly_spades.sh` | SPAdes assembly of trimmed reads |
+| `bin/03_quast_evaluation.sh` | QUAST report for each assembly |
+| `bin/04_summarize_quast_results.sh` | Contigs, total length, N50 and GC into one table |
+| `bin/05_mash_analysis.sh` | Mash sketches, distances and a quick tree |
+| `bin/06_fastani_analysis.sh` | All-vs-all average nucleotide identity |
+| `bin/07_funannotate_prediction.sh` | Contig filtering, repeat masking, gene prediction |
+| `bin/08_prepare_proteomes_for_orthofinder.sh` | Collects protein FASTA files |
+| `bin/09_run_orthofinder.sh` | Orthogroup inference |
+| `bin/10_run_phylogenomics_pipeline.sh` | Single-copy orthologs, alignment, gene trees, supermatrix, species trees |
+| `scripts/plot_quast_metrics.py` | Assembly quality bar plots |
+| `scripts/plot_mash_dendrogram.py` · `plot_mash_heatmap.py` | Mash dendrogram and clustered heatmap |
+| `scripts/plot_fastani_dendrogram.py` | ANI-based dendrogram |
+| `scripts/plot_orthogroup_upset.py` | Orthogroup overlap across species |
+| `scripts/extract_scos.py` · `extract_sco_seqs.py` · `build_supermatrix.py` | Phylogenomics helpers |
 
-These scripts use whole-genome approaches to measure relatedness between the fungal isolates.
+</details>
 
-| File Name | Description |
-| :--- | :--- |
-| `05_mash_analysis.sh` | Uses **Mash** to compute genome-wide distances and create a preliminary distance-based tree in Newick format. |
-| `scripts/plot_mash_dendrogram.py` | Plots a hierarchical dendrogram from the Mash distance data, with sample labels and optional group labels. |
-| `scripts/plot_mash_heatmap.py` | Visualizes the Mash distances as a clustered heatmap for a different perspective on genomic similarity. |
-| `06_fastani_analysis.sh` | Calculates **Average Nucleotide Identity (ANI)** between all assembled genomes using **FastANI**. |
-| `scripts/plot_fastani_dendrogram.py` | Creates a dendrogram from the FastANI distance matrix (`100 - ANI`), providing another view of species relatedness. |
+<details>
+<summary><b>Required software</b></summary>
 
----
+FastQC, Trimmomatic, SPAdes, QUAST, Mash, FastANI, Funannotate, OrthoFinder, MAFFT, IQ-TREE, plus Python packages Biopython, pandas, matplotlib, seaborn, scipy and upsetplot. Conda environment names are set in `bin/00_config.sh`.
 
-### Step 3: Gene Prediction and Orthology
+</details>
 
-This section focuses on identifying and annotating genes, and then grouping them into orthologous families.
+## Data policy
 
-| File Name | Description |
-| :--- | :--- |
-| `07_funannotate_prediction.sh` | Runs the **Funannotate** pipeline for gene prediction and annotation, including contig filtering and repeat masking. It generates protein and nucleotide FASTA files for each sample. |
-| `08_prepare_proteomes_for_orthofinder.sh` | Copies the protein FASTA files from the Funannotate results to a dedicated directory for OrthoFinder. |
-| `09_run_orthofinder.sh` | Executes **OrthoFinder** to identify orthologous gene groups and infer a species tree from all gene trees. |
-| `scripts/plot_orthogroup_upset.py` | Generates an **UpSet plot** to visualize the number and overlap of orthogroups across the different species. |
-
----
-
-### Step 4: Phylogenomics
-
-These scripts perform phylogenetic analysis using a variety of methods based on single-copy orthologs.
-
-| File Name | Description |
-| :--- | :--- |
-| `10_run_phylogenomics_pipeline.sh` | A master script that orchestrates the following: <br> • **Single-Copy Ortholog (SCO) Extraction**: Identifies and extracts SCOs from OrthoFinder results. <br> • **Sequence Alignment**: Aligns each SCO protein family using **MAFFT**. <br> • **Gene Tree Inference**: Builds a phylogenetic tree for each aligned SCO using **IQ-TREE**. <br> • **Supermatrix Concatenation**: Combines all aligned SCOs into a single supermatrix. <br> • **Species Tree Inference**: Infers a final species tree from the supermatrix (concatenation approach) and a consensus tree from all individual gene trees. |
-| `scripts/extract_scos.py` | A Python script called by `10_run_phylogenomics_pipeline.sh` to parse the `Orthogroups.GeneCount.tsv` file and identify SCOs. |
-| `scripts/extract_sco_seqs.py` | A Python script to extract the actual protein sequences for each SCO from the Funannotate protein FASTA files. |
-| `scripts/build_supermatrix.py` | A Python script to concatenate all aligned SCOs into one large FASTA file for phylogenetic inference. |
+This repository contains **code only**. No sequencing data, assemblies, results or sample metadata are included, and the files in `examples/` use dummy IDs.
 
 ---
 
-## Required Software
-
-This pipeline relies on several bioinformatics tools, all of which are managed via **Conda**. The scripts are written to activate specific Conda environments as needed.
-
-* FastQC
-* Trimmomatic
-* SPAdes
-* QUAST
-* Mash
-* FastANI
-* Funannotate
-* OrthoFinder
-* MAFFT
-* IQ-TREE
-* Biopython
-* pandas
-* matplotlib
-* seaborn
-* scipy
-
+<p align="center"><sub>Built by <a href="https://www.linkedin.com/in/mahmadtariq/">M. Ahmad Tariq</a> · MSc AgriGenomics, Kiel University</sub></p>
