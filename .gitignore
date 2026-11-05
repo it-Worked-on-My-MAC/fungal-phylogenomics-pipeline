@@ -7,3 +7,5 @@ results_*/
 *.fastq.gz
 *.fasta
 *.fa
+demo/work/
+__pycache__/

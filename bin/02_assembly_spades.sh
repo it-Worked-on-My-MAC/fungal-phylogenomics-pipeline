@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Ensure conda activate works in scripts
-__conda_setup="$('/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
-eval "$__conda_setup"
-
 # Load configuration file
 source bin/00_config.sh
 
@@ -15,6 +11,7 @@ conda activate "$CONDA_ASSEMBLY"
 mkdir -p "$ASSEMBLY_DIR"
 
 for ID in "${ALL_SAMPLES[@]}"; do
+  if [[ -s "$ASSEMBLY_DIR/${ID}_spades/contigs.fasta" ]]; then continue; fi   # finished in an earlier run
   echo "[ASSEMBLY] Assembling sample $ID..."
 
   spades.py -1 "$TRIM_DIR/${ID}_1.clean.fq.gz" -2 "$TRIM_DIR/${ID}_2.clean.fq.gz" \

@@ -16,6 +16,6 @@ if [ ! -d "$ORTHO_PROTEOMES_DIR" ]; then
 fi
 
 echo "[ORTHOFINDER] Running OrthoFinder..."
-orthofinder -f "$ORTHO_PROTEOMES_DIR" -t "$THREADS" -a "$THREADS"
+orthofinder -f "$ORTHO_PROTEOMES_DIR" -n pipeline -t "$THREADS" -a "$THREADS"
 
 echo "✅ OrthoFinder run complete. Check: $ORTHO_PROTEOMES_DIR/OrthoFinder"

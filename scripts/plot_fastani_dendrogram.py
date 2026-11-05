@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import sys
 import pandas as pd
 import numpy as np
@@ -13,7 +14,15 @@ output_pdf = sys.argv[2]
 groups_tsv = sys.argv[3] if len(sys.argv) > 3 else None  # optional: sample_id<TAB>group
 
 # === Load and Prepare Data ===
-df = pd.read_csv(input_file, sep='\t')
+df = pd.read_csv(input_file, sep='\t', header=None,
+                 names=['Query', 'Reference', 'ANI', 'Fragments', 'TotalFragments'])
+
+def extract_id(path):
+    match = re.search(r"/([^/]+)_spades/", path)
+    return match.group(1) if match else path
+
+df['Query'] = df['Query'].apply(extract_id)
+df['Reference'] = df['Reference'].apply(extract_id)
 
 # Build ANI matrix
 ani_matrix = df.pivot(index='Query', columns='Reference', values='ANI')
@@ -48,5 +57,4 @@ plt.ylabel("Distance (100 - ANI)")
 plt.tight_layout()
 
 plt.savefig(output_pdf)
-plt.show()
 print(f"✅ Dendrogram saved to {output_pdf}")

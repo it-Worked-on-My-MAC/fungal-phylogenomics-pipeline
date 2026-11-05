@@ -9,12 +9,13 @@ mkdir -p "$ORTHOLOGY_DIR/proteomes"
 
 echo "[ORTHOLOGY] Copying protein FASTA files..."
 for ID in "${ORTHO_SAMPLES[@]}"; do
-  PROTEIN_IN="$FUNANNOTATE_DIR/${ID}_funanno/predict_results/Fungus_sp_${ID}.proteins.fa"
+  PROTEIN_IN=$(ls "$FUNANNOTATE_DIR/${ID}_funanno/predict_results/"*.proteins.fa 2>/dev/null | head -1 || true)
   PROTEIN_OUT="$ORTHOLOGY_DIR/proteomes/${ID}_proteins.fa"
-  if [[ -f "$PROTEIN_IN" ]]; then
+  if [[ -n "$PROTEIN_IN" ]]; then
     cp "$PROTEIN_IN" "$PROTEIN_OUT"
   else
-    echo "⚠️  Protein file not found for $ID, skipping..."
+    echo "❌ Protein file not found for $ID" >&2
+    exit 1
   fi
 done
 

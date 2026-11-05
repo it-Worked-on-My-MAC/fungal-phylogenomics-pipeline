@@ -39,8 +39,7 @@ for col, label in metrics.items():
     plt.tight_layout()
 
     out_file = os.path.join(
-        OUTPUT_DIR, f"quast_plot_{col.replace(' ', '_').replace('(', '').replace(')', '').replace('#', 'num')}.png"
+        OUTPUT_DIR, f"quast_plot_{col.replace(' ', '_').replace('(', '').replace(')', '').replace('#', 'num').replace('%', 'percent')}.png"
     )
     plt.savefig(out_file, dpi=300)
-    plt.show()
     print(f"✅ Saved: {out_file}")

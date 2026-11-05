@@ -58,4 +58,3 @@ g.savefig(output_png)
 g.savefig(output_pdf)
 
 print(f"Grouped heatmap saved as:\n{output_png}\n{output_pdf}")
-plt.show()
